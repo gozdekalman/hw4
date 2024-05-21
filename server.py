@@ -1,5 +1,6 @@
 import socket
 import threading
+import json
 from user_manager import UserManager
 
 class ChatServer:
@@ -26,20 +27,33 @@ class ChatServer:
                 if message.startswith('username:'):
                     client_username = message.split(':')[1]
                     self.user_manager.add_user(client_username)
+                    user = self.user_manager.get_user(client_username)
                     welcome_message = f"User {client_username} joined the chat."
-                    self.user_manager.get_user(client_username).add_message(welcome_message)
+                    user.add_message(welcome_message)
                     self.broadcast(welcome_message, client)
+                    
+                    # Send past messages to the newly connected client
+                    past_messages = user.get_messages()
+                    client.send(json.dumps(past_messages).encode('utf-8'))
+                elif message.startswith('search:'):
+                    keyword = message.split(':')[1]
+                    search_results = self.user_manager.search_messages(keyword)
+                    client.send(json.dumps(search_results).encode('utf-8'))
+                elif message == 'group':
+                    groups = self.user_manager.group_users()
+                    client.send(json.dumps(groups, default=str).encode('utf-8'))
                 else:
                     if client_username:
                         user = self.user_manager.get_user(client_username)
                         user.add_message(message)
                         formatted_message = f"{client_username}: {message}"
                         self.broadcast(formatted_message, client)
-            except:
+            except Exception as e:
                 if client_username:
                     self.clients.remove(client)
                     self.broadcast(f"User {client_username} left the chat.", client)
                     client.close()
+                print(f"Error: {e}")
                 break
 
     def run(self):

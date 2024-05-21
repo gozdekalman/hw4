@@ -1,5 +1,6 @@
 import socket
 import threading
+import json
 
 class ChatClient:
     def __init__(self, username, host='localhost', port=12345):
@@ -11,11 +12,30 @@ class ChatClient:
     def receive_messages(self):
         while True:
             try:
-                message = self.client.recv(1024)
-                if message:
-                    print(message.decode('utf-8'))
-            except:
-                print('An error occurred.')
+                message = self.client.recv(1024).decode('utf-8')
+                try:
+                    data = json.loads(message)
+                    if isinstance(data, list):
+                        print("Past messages:")
+                        for msg in data:
+                            print(msg)
+                    elif isinstance(data, dict):
+                        if 'friends' in data and 'family' in data and 'others' in data:
+                            print("User groups:")
+                            for group, users in data.items():
+                                print(f"{group.capitalize()}:")
+                                for user in users:
+                                    print(f"  {user}")
+                        else:
+                            print("Search results:")
+                            for user, messages in data.items():
+                                print(f"{user}:")
+                                for msg in messages:
+                                    print(f"  {msg}")
+                except json.JSONDecodeError:
+                    print(message)
+            except Exception as e:
+                print('An error occurred:', e)
                 self.client.close()
                 break
 

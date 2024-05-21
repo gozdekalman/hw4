@@ -11,16 +11,18 @@ class UserManager:
     def get_user(self, username):
         return self.users.get(username)
 
+    def get_all_users(self):
+        return self.users.values()
+
     def group_users(self):
         groups = {"friends": [], "family": [], "others": []}
         for username, user in self.users.items():
-            # Here you can define your own grouping logic
             if username.startswith('friend_'):
-                groups['friends'].append(user)
+                groups['friends'].append(username)
             elif username.startswith('family_'):
-                groups['family'].append(user)
+                groups['family'].append(username)
             else:
-                groups['others'].append(user)
+                groups['others'].append(username)
         return groups
 
     def search_messages(self, keyword):
